@@ -4,8 +4,8 @@ global.isUrl = (t) => /https?:\/\/[^\s]+/i.test(t);
 
 
 global.config = {
-    SESSION_ID: process.env.SESSION_ID || "Jarvis_0497_v6z1_xzyx_7111_v508_408z_zuy2_x33w,Jarvis_zuv7_wyxu_z8y8_z99v_w831_12xz_v9y3_67vv",
-    SUDO: process.env.SUDO ? process.env.SUDO : "27828418477",
+    SESSION_ID: process.env.SESSION_ID || "", // multi section use jarvis_xxx, jarvis_xxx
+    SUDO: process.env.SUDO ? process.env.SUDO : "",
     HANDLERS: process.env.HANDLERS || "!",
     VPS: toBool(process.env.VPS || "false"),
     MODE: (process.env.MODE || "private").toLowerCase() === "private",
