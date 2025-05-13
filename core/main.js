@@ -1,13 +1,12 @@
 const { jidNormalizedUser, getContentType, downloadMediaMessage, proto } = require("@whiskeysockets/baileys");
+const sudo = ["916235723929@s.whatsapp.net"];
 const { getBuffer } = require('./request');
 const FileType = require("file-type");
 const fs = require("fs");
-const sudo = ["916235723929@s.whatsapp.net"];  
 
 async function Serialize(client, message) {
     const type = getContentType(message.message) || "conversation";
     const msgContent = message.message?.[type] || {};
-
     const m = {
         key: message.key,
         id: message.key.id,
@@ -35,12 +34,13 @@ async function Serialize(client, message) {
             ""
         ).trim(),
         data: message,
-        prefix: (!config.HANDLERS || config.HANDLERS.trim() == 'null' || config.HANDLERS.trim() == 'false') ? '' : config.HANDLERS.trim(),
+        prefix: (!config.HANDLERS || config.HANDLERS.trim() === 'null' || config.HANDLERS.trim() === 'false') ? '' : config.HANDLERS.trim(),
         mentionedJid: msgContent?.contextInfo?.mentionedJid || []
     };
 
     Object.defineProperty(m, "client", { value: client });
     Object.defineProperty(m, "sudo", { value: sudo.concat(botSudo || []) });
+
     m.number = m.sender.replace(/[^0-9]/g, '');
     m.isBot = m.id.startsWith("3EB") || m.id.endsWith("LOKIXER") || (m.id.length === 16 || m.id.length === 15);
 
@@ -84,32 +84,53 @@ async function Serialize(client, message) {
     }
 
     m.reply = async (content, options = {}, type = "text", jid = m.jid) => {
-        return await client.sendMessage(jid, { [type]: content, ...options }, { quoted: m.data });
+        const msg = await client.sendMessage(jid, { [type]: content, ...options }, { quoted: m.data });
+
+        msg.delete = async () => {
+            return await client.sendMessage(msg.key.remoteJid, {
+                delete: {
+                    ...msg.key,
+                    participant: m.sender
+                }
+            });
+        };
+
+        msg.edit = async (conversation) => {
+            return await client.sendMessage(msg.key.remoteJid, {
+                text: conversation,
+                edit: msg.key
+            });
+        };
+
+        msg.react = async (emoji) => {
+            return await client.sendMessage(msg.key.remoteJid, {
+                react: {
+                    text: emoji,
+                    key: msg.key
+                }
+            });
+        };
+
+        return msg;
     };
 
     m.save = async (content, options = { type: 'buffer' }) => {
         const buffer = await downloadMediaMessage(content, "buffer", { reuploadRequest: client.updateMediaMessage });
         if (options.type === 'buffer') return buffer;
 
-        const type = await FileType.fromBuffer(buffer);
-        let trueFileName = "media" + "." + type.ext;
-        await fs.writeFileSync(trueFileName, buffer);
+        const fileType = await FileType.fromBuffer(buffer);
+        const trueFileName = `media.${fileType.ext}`;
+        fs.writeFileSync(trueFileName, buffer);
         return trueFileName;
     };
-    
+
     m.sendFromUrl = async (url, options = {}) => {
-        let buff = await getBuffer(url);
-	    let mime = await FileType.fromBuffer(buff);
-	    let type = mime.mime.split("/")[0];
-	    if (type === "audio") {
-		    options.mimetype = "audio/mpeg";
-	    };
-	    if (type === "application") type = "document";
-	    return m.client.sendMessage(m.jid, {
-		    [type]: buff, ...options 
-	    }, {
-		    ...options 
-	    });
+        const buff = await getBuffer(url);
+        const mime = await FileType.fromBuffer(buff);
+        let type = mime.mime.split("/")[0];
+        if (type === "audio") options.mimetype = "audio/mpeg";
+        if (type === "application") type = "document";
+        return client.sendMessage(m.jid, { [type]: buff, ...options }, { ...options });
     };
 
     return m;
