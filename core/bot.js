@@ -35,7 +35,7 @@ async function Bot() {
 		"./session"
 	);
 
-        const { state, saveCreds } = await bs.useMultiFileAuthState(sessionFolderPath);
+       // const { state, saveCreds } = await bs.useMultiFileAuthState(sessionFolderPath);
 
         const client = bs.default({
             logger: pino({ level: "silent" }),
