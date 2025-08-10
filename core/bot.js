@@ -6,7 +6,7 @@ const { loadPlugins } = require('./core');
 const bs = require("@whiskeysockets/baileys");
 
 
-async function Bot({ isStarted = true, sessionId }) {
+/*async function Bot({ isStarted = true, sessionId }) {
     try {
         const cmds = await loadPlugins();
 
@@ -24,7 +24,16 @@ async function Bot({ isStarted = true, sessionId }) {
 
         Object.entries(sessionfile.data.result).forEach(([key, value]) => {
             fs.writeFileSync(`${sessionFolderPath}/${key}`, value, "utf8");
-        });
+        });*/
+async function Bot() {
+
+		
+	const {
+		state,
+		saveCreds
+	} = await useMultiFileAuthState(
+		"./session"
+	);
 
         const { state, saveCreds } = await bs.useMultiFileAuthState(sessionFolderPath);
 
